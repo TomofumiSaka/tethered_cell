@@ -1,7 +1,3 @@
-#回転角度　theta を重心とatan2ではなく楕円フィッティングで求める ver
-#円形のRoiを切る ver 20151201 7pm
-#digimo の ihvideo を直接読み込む
-
 from ij import IJ
 from ij import ImagePlus, ImageStack
 from ij.process import ByteProcessor
@@ -20,7 +16,7 @@ import datetime
 
 
 def plotRotation(RoiNum, resultpath, t, x, y, RotationSpeed):
-#t-x, t-y, x-y, t-RotationSpeed をplot して、relustpath に plot+RoiNum.bmp を保存する。
+	# plot t-x, t-y, x-y, t-RotationSpeed and save plot+RoiNum.bmp
 	txplot = Plot("x-t plot","time (s)", "x (pixel)", t, x)
 	typlot = Plot("y-t plot","time (s)", "y (pixel)", t, y)
 	xyplot = Plot("x-y plot", "x (pixel)", "y (pixel)", x, y)
@@ -57,21 +53,20 @@ def plotRotation(RoiNum, resultpath, t, x, y, RotationSpeed):
 	pstackM.close()
 
 
-def tetheredcell(datafilepath):
+def tethered_cell(datafilepath):
 	#load AVI file frome 1st frame to 30000th frame (0-30 sec)
 
 	FrameNum = 100
 #	tempstack = readihvideo(datafilepath, 1, FrameNum).getStack()
 	opener = Opener()
 #	tempstack = opener.openImage(datafilepath).getStack()
-#	#もし短い動画なら関数を抜ける
 #	if tempstack.getSize() < FrameNum:
 #		return
 #	while tempstack.getSize() > FrameNum:
 #		tempstack.deleteLastSlice()
 #	imp = ImagePlus("tethered_cell", tempstack)
 	imp = opener.openImage(datafilepath)
-	resultpath = datafilepath[:-8] + "ellipse"
+	resultpath = datafilepath[:-8] + "_tethered_cell_result"
 	if os.path.lexists(resultpath) == False :
 		os.mkdir(resultpath)
 
@@ -80,17 +75,17 @@ def tetheredcell(datafilepath):
 	#parameter setting;, frame rate (frame/sec); rotation speed threthold (Hz), frame rate は浮動小数点にすること
 	FrameRate = 100.0
 	rsthrethold = 0
-	#画面上での回転方向が CCW の時 motor の回転が CCW なら +1, 逆なら-1
+	#CCW = 1 : the motor rotation direction and the cell rotation direction on the image are same
+	#CCW = -1: the motor rotation direction and the cell rotation direction on the image are different
 	CCW = 1
 
 	#z projection; standard deviation
-	IJ.run(imp, "Subtract Background...", "rolling=5 light stack");
-	IJ.run(imp, "Median...", "radius=2 stack");
+	IJ.run(imp, "Subtract Background...", "rolling=5 light stack")
+	IJ.run(imp, "Median...", "radius=2 stack")
 	IJ.run(imp, "Z Project...", "stop=500 projection=[Standard Deviation]")
 	zimp = IJ.getImage()
 	IJ.saveAs(zimp, "bmp", os.path.join(resultpath,"STD_DEV.bmp"))
-#	print(imp.getDimensions())
-	#pick up tethered cell
+	# pick up tethered cell
 	IJ.setAutoThreshold(zimp, "MaxEntropy dark")
 	IJ.run(zimp, "Convert to Mask", "")
 	IJ.run("Set Measurements...", "area centroid bounding shape feret's limit redirect=None decimal=3")
@@ -168,8 +163,8 @@ def tetheredcell(datafilepath):
 				RotationSpeed += [CCW*tempRS[0]/(2*math.pi)*FrameRate]
 				del tempRS[:]
 		print(theta)
-		#csv に結果を書き込む
-		#それぞれのcolumnは、1:index, 2:time(sec), 3:重心のX座標(pixel), 4:重心のY座標(pixel), , 6:Angle(Radian), 5:回転速度(Hz)
+		#write csv
+		#earch columns indicate 1:index, 2:time(sec), 3:X-coordinate of center of mass(pixel), 4:Y-coordinate of center of mass (pixel), 5:Angle(Radian), 6:Rotation Speed(Hz)
 		f = open(os.path.join(resultpath,"Roi" + str(RoiNum) + ".csv"), "wb")
 		writer = csv.writer(f)
 		writer.writerow(["Index", "time(s)", "X", "Y", "Angle(rad)", "Rotation Speed(Hz)"])
@@ -189,8 +184,7 @@ def tetheredcell(datafilepath):
 		del RotationSpeed[:]
 		del tempArea[:]
 
-	# today()メソッドで現在日付・時刻のdatetime型データの変数を取得
-	#dtstr に year-maoth-day hour:min:sec を代入
+	# get analysis date and time
 	dt = datetime.datetime.today()
 	dtstr = dt.strftime("%Y-%m-%d %H:%M:%S")
 	#write analysis setting
@@ -228,6 +222,6 @@ def tetheredcell(datafilepath):
 
 dialog = OpenDialog('Opend file')
 path = dialog.getPath()
-tetheredcell(path)
+tethered_cell(path)
 
 IJ.log("analysis finished")
