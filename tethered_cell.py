@@ -142,7 +142,7 @@ def tethered_cell(datafilepath, FrameNum=100, FrameRate=100.0, CCW=1):
     #write analysis setting
 
     with open(os.path.join(resultpath,"analysis_setting.csv"), "w") as f:
-        writer = csv.writer(f3)
+        writer = csv.writer(f)
         writer.writerow(["Analysis Date","frame number","frame rate","CCW direction", "Method","Auto threshold", "Subtruct Background", "Median filter"])
         writer.writerow([dtstr, FrameNum, FrameRate, CCW, "Ellipse", "Li", "5.0", "2"])
 
