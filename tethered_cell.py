@@ -10,8 +10,8 @@ from ij.plugin import MontageMaker, Duplicator
 from ij.plugin.frame import RoiManager
 
 
-def plotRotation(RoiNum, result_path, t, x, y, rotation_speed):
-    # plot t-x, t-y, x-y, t-rotation_speed and save plot+RoiNum.bmp
+def plotRotation(roi_number, result_path, t, x, y, rotation_speed):
+    # plot t-x, t-y, x-y, t-rotation_speed and save plot+roi_number.bmp
     txplot = Plot('x-t plot','time (s)', 'x (pixel)', t, x)
     typlot = Plot('y-t plot','time (s)', 'y (pixel)', t, y)
     xyplot = Plot('x-y plot', 'x (pixel)', 'y (pixel)', x, y)
@@ -39,7 +39,7 @@ def plotRotation(RoiNum, result_path, t, x, y, rotation_speed):
 
     pstackM = MontageMaker().makeMontage2(pstackimp, 2, 2, 2, 1, 4, 1, 0, False)
     #pstackM.show()
-    IJ.saveAs(pstackM, 'BMP', os.path.join(result_path,'Plot' + str(RoiNum) + '.bmp'))
+    IJ.saveAs(pstackM, 'BMP', os.path.join(result_path,'Plot' + str(roi_number) + '.bmp'))
 
     tximp.close()
     xyimp.close()
@@ -56,12 +56,18 @@ def tethered_cell(image_path, frame_number=100, frame_rate=100.0, CCW=1):
     """
     opener = Opener()
     imp = opener.openImage(image_path)
+    image_slice_number = imp.getNSlices()
+    rm = RoiManager().getInstance()
+
+    if image_slice_number < frame_number: # too short movie
+        IJ.log('Number of frame of the movie is fewer than the number of frame that you selected')
+        return False
+    # create result directory
     result_path = image_path + '_tethered_cell_result'
     if os.path.lexists(result_path) is False:
         os.mkdir(result_path)
-    rm = RoiManager().getInstance()
 
-    #z projection; standard deviation
+    #z projection; standard deviation, tethered cell shorws circle
     IJ.run(imp, 'Subtract Background...', 'rolling=5 light stack')
     IJ.run(imp, 'Median...', 'radius=2 stack')
     IJ.run(imp, 'Z Project...', 'stop=500 projection=[Standard Deviation]')
@@ -85,17 +91,17 @@ def tethered_cell(image_path, frame_number=100, frame_rate=100.0, CCW=1):
 
     #calculate rotation speed by ellipse fitting
     IJ.setAutoThreshold(imp, 'Li')
-    for RoiNum in range(rm.getCount()):
+    for roi_number in range(rm.getCount()):
         t = []
         XM = []
         YM = []
         theta = []
         rotation_speed = []
         area = []
-        imp.setRoi(rm.getRoi(RoiNum))
+        imp.setRoi(rm.getRoi(roi_number))
         cropped_imp = Duplicator().run(imp)
         IJ.run('Set Measurements...', 'area mean center fit limit redirect=None decimal=3')
-        rm.select(RoiNum)
+        rm.select(roi_number)
         rt = rm.multiMeasure(imp)
 
         # check cell is present while analysis. Don't a cell gose anywhare?
@@ -109,29 +115,28 @@ def tethered_cell(image_path, frame_number=100, frame_rate=100.0, CCW=1):
             XM.append(rt.getValue('XM1', i))
             YM.append(rt.getValue('YM1', i))
             theta.append(rt.getValue('Angle1', i)/180.0*math.pi)  # convert to radian
-
             if i == 0:
                 rotation_speed.append(0)
             else:
                 # phase treatment, theta should be -pi ~ pi
-                tempRS = [theta[i] - theta[i-1],
+                temp_rotation_speed = [theta[i] - theta[i-1],
                           theta[i] - theta[i-1] + math.pi,
                           theta[i] - theta[i-1] - math.pi,
                           theta[i] - theta[i-1] + 2*math.pi,
                           theta[i] - theta[i-1] - 2*math.pi]
-                tempRS = sorted(tempRS, key = lambda x :abs(x) )
-                rotation_speed.append(CCW*tempRS[0]/(2.0*math.pi)*frame_rate)
+                temp_rotation_speed = sorted(temp_rotation_speed, key = lambda x :abs(x) )[0]
+                rotation_speed.append(CCW*temp_rotation_speed/(2.0*math.pi)*frame_rate)
 
         # write csv
         # earch columns indicate 1:index, 2:time(sec), 3:X-coordinate of center of mass(pixel), 4:Y-coordinate of center of mass (pixel), 5:Angle(Radian), 6:Rotation Speed(Hz)
-        with open(os.path.join(result_path,'Roi' + str(RoiNum) + '.csv'), 'w') as f:
+        with open(os.path.join(result_path,'Roi' + str(roi_number) + '.csv'), 'w') as f:
             writer = csv.writer(f)
             writer.writerow(['Index', 'time(s)', 'X', 'Y', 'Angle(rad)', 'Rotation Speed(Hz)'])
             for i in range(len(t)):
                 writer.writerow([i, t[i], XM[i], YM[i], theta[i], rotation_speed[i]])
         # plot x-y, t-x, t-y, t-rotation speed, save plot as bmp
-        plotRotation(RoiNum, result_path, t, XM, YM, rotation_speed)
-        IJ.saveAs(cropped_imp, 'tiff', os.path.join(result_path,'Roi' + str(RoiNum) + '.tiff'))
+        plotRotation(roi_number, result_path, t, XM, YM, rotation_speed)
+        IJ.saveAs(cropped_imp, 'tiff', os.path.join(result_path,'Roi' + str(roi_number) + '.tiff'))
         rt.reset()
 
     # get analysis date and time
@@ -173,5 +178,4 @@ if __name__ in ['__builtin__','__main__']:
     else:
         CCW = -1
     tethered_cell(path, frame_number, frame_rate, CCW)
-
     IJ.log('analysis finished')
