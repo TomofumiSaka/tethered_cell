@@ -1,5 +1,6 @@
-# tethered_cell
-ImageJ Fiji script for tethered cell assay
+# Tethered_cell
+ImageJ Fiji script for tethered cell assay.
+I used this script in "Novel Insights into Conformational Rearrangements of the Bacterial Flagellar Switch Complex", DOI: 10.1128/mBio.00079-19
 
 # How To Use
 
