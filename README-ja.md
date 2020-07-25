@@ -1,7 +1,7 @@
 # Tethered_cell
 このリポジトリは ImageJ Fiji 上で動作する, べん毛を持つバクテリアのテザードセルアッセイを解析するためのスクリプトです.
 以下の論文でこのスクリプトを使用しました。
-"Novel Insights into Conformational Rearrangements of the Bacterial Flagellar Switch Complex", DOI: 10.1128/mBio.00079-19
+"Novel Insights into Conformational Rearrangements of the Bacterial Flagellar Switch Complex", DOI: [10.1128/mBio.00079-19](https://doi.org/10.1128/MBIO.00079-19)
 
 # 使い方
 * 次のURLから mageJ Fiji をダウンロードしてインストールしてください。 https://imagej.net/Fiji/Downloads
