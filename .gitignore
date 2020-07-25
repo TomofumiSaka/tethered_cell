@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# result of test
+test_movies/*_tethered_cell_result/
+test_movies/*_tethered_cell_result/*
