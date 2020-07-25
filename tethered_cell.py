@@ -165,9 +165,9 @@ if __name__ in ['__builtin__','__main__']:
 
     # ask parameter via dialog
     parameter_dialog = GenericDialog('Parameter setting')
-    parameter_dialog.addNumericField('Frame number', 100, 1)
+    parameter_dialog.addNumericField('Frame number', 1000,0)
     parameter_dialog.addNumericField('Frame rate (frame/s)', 100, 1)
-    parameter_dialog.addChoice('Are motor rotation direction \n and cell rotation on image same? ', 
+    parameter_dialog.addChoice('Are motor rotation direction and cell rotation direction on image same?', 
                                ['Same', 'Different'], 'Same')
     parameter_dialog.showDialog()
     frame_number = int(parameter_dialog.getNextNumber())
